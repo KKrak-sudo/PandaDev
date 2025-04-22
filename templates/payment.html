@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Поддержать проект - Новостной портал</title>
+    <title>Оплата - Новостной портал</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
@@ -39,29 +39,42 @@
     </header>
 
     <main>
-        <h2>Поддержать проект</h2>
+        <h2>Оплата</h2>
         
-        <div class="donate-info">
-            <p>Вы можете поддержать наш проект финансово. Любая сумма поможет нам развиваться дальше и делать более качественный контент.</p>
-            <p>Выберите сумму пожертвования:</p>
-        </div>
-        
-        <div class="donate-options">
-            <a href="{{ url_for('process_donation', amount=100) }}" class="donate-button">100 ₽</a>
-            <a href="{{ url_for('process_donation', amount=300) }}" class="donate-button">300 ₽</a>
-            <a href="{{ url_for('process_donation', amount=500) }}" class="donate-button">500 ₽</a>
-            <a href="{{ url_for('process_donation', amount=1000) }}" class="donate-button">1000 ₽</a>
-        </div>
-        
-        <div class="custom-donate">
-            <p>Или введите свою сумму:</p>
-            <form action="{{ url_for('process_donation') }}" method="get">
-                <div>
-                    <input type="number" id="amount" name="amount" min="1" placeholder="Другая сумма" required>
-                    <span class="currency">₽</span>
+        <div class="payment-info">
+            <h3>Информация о платеже</h3>
+            <p>Сумма: <strong>{{ amount }} ₽</strong></p>
+            <p>Идентификатор платежа: <strong>{{ payment_id }}</strong></p>
+            <p>Дата: <strong>{{ donation.created_at.strftime('%d.%m.%Y %H:%M') }}</strong></p>
+            
+            <div class="yoomoney-info">
+                <h3>Оплата через YooMoney</h3>
+                <p>Для совершения пожертвования, пожалуйста, переведите указанную сумму на кошелек YooMoney:</p>
+                <div class="wallet-number">
+                    <span>{{ wallet }}</span>
+                    <button id="copy-wallet" onclick="copyWallet()">Копировать</button>
                 </div>
-                <button type="submit">Поддержать</button>
-            </form>
+                <p class="payment-note">
+                    <strong>Важно:</strong> После совершения платежа, пожалуйста, укажите в комментарии к платежу идентификатор: <strong>{{ payment_id }}</strong>
+                </p>
+            </div>
+            
+            <div class="payment-instructions">
+                <h3>Инструкция по оплате</h3>
+                <ol>
+                    <li>Скопируйте номер кошелька YooMoney: <strong>{{ wallet }}</strong></li>
+                    <li>Войдите в свой аккаунт YooMoney или используйте мобильное приложение</li>
+                    <li>Выберите пункт "Перевести на кошелек"</li>
+                    <li>Вставьте скопированный номер кошелька</li>
+                    <li>Укажите сумму: <strong>{{ amount }} ₽</strong></li>
+                    <li>В комментарии укажите идентификатор платежа: <strong>{{ payment_id }}</strong></li>
+                    <li>Подтвердите перевод</li>
+                </ol>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="{{ url_for('profile') }}" class="btn">Вернуться в профиль</a>
+            </div>
         </div>
     </main>
 
@@ -70,6 +83,18 @@
     </footer>
 
     <script>
+        // Функция для копирования номера кошелька
+        function copyWallet() {
+            const walletText = "{{ wallet }}";
+            navigator.clipboard.writeText(walletText).then(function() {
+                const button = document.getElementById('copy-wallet');
+                button.textContent = 'Скопировано!';
+                setTimeout(function() {
+                    button.textContent = 'Копировать';
+                }, 2000);
+            });
+        }
+    
         // Обработчик для переключения темы
         document.getElementById('theme-toggle').addEventListener('change', function() {
             if (this.checked) {

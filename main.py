@@ -13,6 +13,9 @@ app.secret_key = os.environ.get("SESSION_SECRET", "super-secret-key")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
+# Настройки для YooMoney
+app.config["YOOMONEY_WALLET"] = "4100117513967646"  # Пример номера кошелька YooMoney
+
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
 
@@ -48,6 +51,18 @@ class News(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
     author_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
+# Создаем модель для пожертвований
+class Donation(db.Model):
+    __tablename__ = "donations"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    payment_id = db.Column(db.String(100), nullable=True)
+    status = db.Column(db.String(20), default="pending")  # pending, completed, failed
+    
+    user = db.relationship("User", backref="donations")
+
 # Create database tables
 with app.app_context():
     db.create_all()
@@ -61,6 +76,21 @@ def get_current_user():
     if user_id:
         return User.query.get(user_id)
     return None
+
+def generate_reset_token():
+    """Генерирует случайный токен для восстановления пароля"""
+    # Генерируем 6-значный числовой код
+    reset_code = ''.join(random.choice(string.digits) for _ in range(6))
+    return reset_code
+
+def send_reset_email(user, token):
+    """
+    Отправляет email с кодом для восстановления пароля
+    В боевом режиме здесь был бы код для отправки через SendGrid или другой сервис
+    """
+    # Имитация отправки письма для демонстрационных целей
+    print(f"[ДЕМО] Отправка кода восстановления на email {user.email}: {token}")
+    return True
 
 # Routes
 @app.route("/")
@@ -291,6 +321,251 @@ def create_admin():
         db.session.add(admin)
         db.session.commit()
         print("Администратор 'root' успешно создан.")
+
+# Личный кабинет
+@app.route("/profile")
+def profile():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("login_get"))
+    
+    categories = Category.query.all()
+    return render_template(
+        "profile.html", 
+        user=user, 
+        categories=categories,
+        error=None,
+        success=None
+    )
+
+# Обновление email
+@app.route("/update_email", methods=["POST"])
+def update_email():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("login_get"))
+    
+    email = request.form.get("email")
+    password = request.form.get("password")
+    
+    # Проверка пароля
+    if hash_password(password) != user.password:
+        categories = Category.query.all()
+        return render_template(
+            "profile.html", 
+            user=user, 
+            categories=categories,
+            error="Неверный пароль",
+            success=None
+        )
+    
+    # Проверка на существование email у другого пользователя
+    if email != user.email and User.query.filter_by(email=email).first():
+        categories = Category.query.all()
+        return render_template(
+            "profile.html", 
+            user=user, 
+            categories=categories,
+            error="Этот email уже используется другим пользователем",
+            success=None
+        )
+    
+    user.email = email
+    db.session.commit()
+    
+    categories = Category.query.all()
+    return render_template(
+        "profile.html", 
+        user=user, 
+        categories=categories,
+        error=None,
+        success="Email успешно обновлен"
+    )
+
+# Обновление пароля
+@app.route("/update_password", methods=["POST"])
+def update_password():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("login_get"))
+    
+    current_password = request.form.get("current_password")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+    
+    # Проверка текущего пароля
+    if hash_password(current_password) != user.password:
+        categories = Category.query.all()
+        return render_template(
+            "profile.html", 
+            user=user, 
+            categories=categories,
+            error="Неверный текущий пароль",
+            success=None
+        )
+    
+    # Проверка совпадения новых паролей
+    if new_password != confirm_password:
+        categories = Category.query.all()
+        return render_template(
+            "profile.html", 
+            user=user, 
+            categories=categories,
+            error="Новые пароли не совпадают",
+            success=None
+        )
+    
+    user.password = hash_password(new_password)
+    db.session.commit()
+    
+    categories = Category.query.all()
+    return render_template(
+        "profile.html", 
+        user=user, 
+        categories=categories,
+        error=None,
+        success="Пароль успешно изменен"
+    )
+
+# Восстановление пароля - форма
+@app.route("/forgot-password", methods=["GET"])
+def forgot_password_get():
+    categories = Category.query.all()
+    return render_template(
+        "forgot_password.html", 
+        categories=categories,
+        error=None,
+        success=None
+    )
+
+# Восстановление пароля - отправка кода
+@app.route("/forgot-password", methods=["POST"])
+def forgot_password():
+    email = request.form.get("email")
+    categories = Category.query.all()
+    
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return render_template(
+            "forgot_password.html", 
+            categories=categories,
+            error="Пользователь с таким email не найден",
+            success=None
+        )
+    
+    # Генерируем токен и устанавливаем срок действия
+    token = generate_reset_token()
+    user.reset_token = token
+    user.reset_token_expiry = datetime.utcnow() + timedelta(hours=1)
+    db.session.commit()
+    
+    # Отправляем email с токеном (имитация)
+    send_reset_email(user, token)
+    
+    return render_template(
+        "forgot_password.html", 
+        categories=categories,
+        error=None,
+        success=f"Код восстановления отправлен на {email}. Для демонстрации: {token}"
+    )
+
+# Сброс пароля - форма
+@app.route("/reset-password/<token>", methods=["GET"])
+def reset_password_get(token):
+    categories = Category.query.all()
+    return render_template(
+        "reset_password.html", 
+        token=token,
+        categories=categories,
+        error=None
+    )
+
+# Сброс пароля - обработка
+@app.route("/reset-password/<token>", methods=["POST"])
+def reset_password(token):
+    reset_code = request.form.get("reset_code")
+    new_password = request.form.get("new_password")
+    confirm_password = request.form.get("confirm_password")
+    
+    categories = Category.query.all()
+    
+    # Проверка совпадения новых паролей
+    if new_password != confirm_password:
+        return render_template(
+            "reset_password.html", 
+            token=token,
+            categories=categories,
+            error="Пароли не совпадают"
+        )
+    
+    # Поиск пользователя с данным токеном
+    user = User.query.filter_by(reset_token=reset_code).first()
+    if not user or not user.reset_token_expiry or user.reset_token_expiry < datetime.utcnow():
+        return render_template(
+            "reset_password.html", 
+            token=token,
+            categories=categories,
+            error="Недействительный или истекший код восстановления"
+        )
+    
+    # Обновление пароля
+    user.password = hash_password(new_password)
+    user.reset_token = None
+    user.reset_token_expiry = None
+    db.session.commit()
+    
+    return redirect(url_for("login_get", reset=True))
+
+# Пожертвования
+@app.route("/donate")
+def donate():
+    user = get_current_user()
+    categories = Category.query.all()
+    
+    return render_template(
+        "donate.html", 
+        user=user, 
+        categories=categories
+    )
+
+# Обработка пожертвования
+@app.route("/process-donation")
+def process_donation():
+    user = get_current_user()
+    if not user:
+        return redirect(url_for("login_get"))
+    
+    amount = request.args.get("amount", 100, type=float)
+    
+    # Создаем запись о пожертвовании
+    donation = Donation(
+        user_id=user.id,
+        amount=amount
+    )
+    db.session.add(donation)
+    db.session.commit()
+    
+    # Генерируем идентификатор платежа и готовим данные для YooMoney
+    payment_id = f"donation_{donation.id}_{int(datetime.now().timestamp())}"
+    wallet = app.config["YOOMONEY_WALLET"]
+    
+    # Отображаем страницу с информацией о платеже и номером кошелька
+    return render_template(
+        "payment.html", 
+        user=user, 
+        categories=Category.query.all(),
+        donation=donation,
+        payment_id=payment_id,
+        wallet=wallet,
+        amount=amount
+    )
+
+# Обработчик переключения темы
+@app.route("/update_theme", methods=["POST"])
+def update_theme():
+    theme = request.json.get("theme", "dark-theme")
+    session["theme"] = theme
+    return jsonify({"status": "success"})
 
 # Create admin when app starts
 with app.app_context():
