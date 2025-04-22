@@ -1,0 +1,159 @@
+body {
+  font-family: 'Roboto', sans-serif;
+  background: #f3f3f3;
+  padding: 20px;
+  max-width: 1000px;
+  margin: auto;
+  line-height: 1.6;
+}
+
+header {
+  background: #333;
+  color: white;
+  padding: 20px;
+  margin-bottom: 30px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+header a {
+  color: #ffdd57;
+  margin-left: 10px;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+header a:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.admin-link {
+  display: inline-block;
+  background: #ffdd57;
+  color: #333 !important;
+  padding: 5px 10px;
+  border-radius: 3px;
+  margin-top: 10px;
+}
+
+.admin-link:hover {
+  background: #ffd633;
+  color: #333 !important;
+  text-decoration: none !important;
+}
+
+form {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-bottom: 20px;
+}
+
+form input, form textarea {
+  display: block;
+  margin: 15px 0;
+  padding: 12px;
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 16px;
+  transition: border 0.3s ease;
+}
+
+form input:focus, form textarea:focus {
+  border-color: #333;
+  outline: none;
+}
+
+button {
+  padding: 12px 24px;
+  background: #333;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background: #555;
+}
+
+.delete-btn {
+  background: #e74c3c;
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.delete-btn:hover {
+  background: #c0392b;
+}
+
+article {
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+article h3 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.error-message {
+  background: #e74c3c;
+  color: white;
+  padding: 10px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+
+.success-message {
+  background: #2ecc71;
+  color: white;
+  padding: 10px;
+  border-radius: 3px;
+  margin-bottom: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  color: #777;
+  padding: 40px;
+  background: white;
+  border-radius: 5px;
+  margin: 30px 0;
+}
+
+.news-meta {
+  color: #777;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.admin-actions {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  body {
+    padding: 10px;
+  }
+  
+  form input, form textarea, button {
+    font-size: 14px;
+  }
+  
+  header {
+    padding: 15px;
+  }
+}
