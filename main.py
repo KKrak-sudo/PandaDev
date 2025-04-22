@@ -21,6 +21,8 @@ class User(db.Model):
     password = db.Column(db.String(256))
     email = db.Column(db.String(120), unique=True, nullable=True)
     is_admin = db.Column(db.Boolean, default=False)
+    is_banned = db.Column(db.Boolean, default=False)
+    ban_reason = db.Column(db.String(200), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     news = db.relationship("News", backref="author", lazy=True)
 
@@ -138,6 +140,16 @@ def login_post():
     ).first()
     
     if user:
+        # Проверяем, не заблокирован ли пользователь
+        if user.is_banned:
+            ban_message = "Ваш аккаунт заблокирован"
+            if user.ban_reason:
+                ban_message += f". Причина: {user.ban_reason}"
+            return render_template(
+                "login.html",
+                registered=False,
+                error=ban_message
+            )
         
         session["user_id"] = user.id
         return redirect(url_for("homepage"))

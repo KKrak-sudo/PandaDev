@@ -12,6 +12,7 @@ dependencies = [
     "jinja2>=3.1.6",
     "psycopg2-binary>=2.9.10",
     "python-multipart>=0.0.20",
+    "sendgrid>=6.11.0",
     "sqlalchemy>=2.0.40",
     "starlette>=0.46.2",
     "uvicorn>=0.34.2",
