@@ -14,7 +14,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 # Настройки для YooMoney
-app.config["YOOMONEY_WALLET"] = "4100117513967646"  # Пример номера кошелька YooMoney
+app.config["YOOMONEY_WALLET"] = "4100118961911044"  # Номер кошелька YooMoney
 
 # Initialize SQLAlchemy
 db = SQLAlchemy(app)
@@ -549,7 +549,14 @@ def process_donation():
     payment_id = f"donation_{donation.id}_{int(datetime.now().timestamp())}"
     wallet = app.config["YOOMONEY_WALLET"]
     
-    # Отображаем страницу с информацией о платеже и номером кошелька
+    # Генерируем ссылку для оплаты через YooMoney
+    payment_url = f"https://yoomoney.ru/transfer/quickpay?receiver={wallet}&quickpay-form=donate&targets=Пожертвование+для+новостного+портала&paymentId={payment_id}&sum={amount}"
+    
+    # Обновляем запись о пожертвовании
+    donation.payment_id = payment_id
+    db.session.commit()
+    
+    # Отображаем страницу с информацией о платеже и платежной ссылкой
     return render_template(
         "payment.html", 
         user=user, 
@@ -557,7 +564,8 @@ def process_donation():
         donation=donation,
         payment_id=payment_id,
         wallet=wallet,
-        amount=amount
+        amount=amount,
+        payment_url=payment_url
     )
 
 # Обработчик переключения темы

@@ -18,6 +18,10 @@
   --dark-card-border: #444444;
   --dark-input-bg: #2c2c2c;
   --dark-input-border: #555555;
+  
+  /* Common Variables */
+  --primary-color: #4caf50;
+  --secondary-color: #3e8e41;
 }
 
 body {
@@ -126,7 +130,8 @@ form input[type="text"],
 form input[type="email"],
 form input[type="password"],
 form textarea,
-form select {
+form select,
+form input[type="number"] {
   width: 100%;
   padding: 10px;
   border-radius: 4px;
@@ -137,7 +142,8 @@ body.light-theme form input[type="text"],
 body.light-theme form input[type="email"],
 body.light-theme form input[type="password"],
 body.light-theme form textarea,
-body.light-theme form select {
+body.light-theme form select,
+body.light-theme form input[type="number"] {
   background-color: var(--light-input-bg);
   border: 1px solid var(--light-input-border);
   color: var(--light-text);
@@ -147,14 +153,15 @@ body.dark-theme form input[type="text"],
 body.dark-theme form input[type="email"],
 body.dark-theme form input[type="password"],
 body.dark-theme form textarea,
-body.dark-theme form select {
+body.dark-theme form select,
+body.dark-theme form input[type="number"] {
   background-color: var(--dark-input-bg);
   border: 1px solid var(--dark-input-border);
   color: var(--dark-text);
 }
 
 form button {
-  background-color: #4caf50;
+  background-color: var(--primary-color);
   color: white;
   border: none;
   padding: 10px 15px;
@@ -164,13 +171,21 @@ form button {
 }
 
 form button:hover {
-  background-color: #3e8e41;
+  background-color: var(--secondary-color);
 }
 
-/* Error message styling */
+/* Error and success message styling */
 .error-message {
   background-color: #f8d7da;
   color: #721c24;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 20px;
@@ -257,4 +272,210 @@ input:checked + .slider:before {
 
 .theme-icon {
   margin-right: 5px;
+}
+
+/* Стили для страницы пожертвований */
+.donate-info {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.donate-options {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.donate-button {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  text-align: center;
+  min-width: 80px;
+  transition: background-color 0.3s;
+}
+
+.donate-button:hover {
+  background-color: var(--secondary-color);
+}
+
+.custom-donate {
+  max-width: 500px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.custom-donate form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.custom-donate form div {
+  position: relative;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.custom-donate input {
+  width: 100%;
+  padding: 0.8rem;
+  font-size: 1rem;
+  padding-right: 2rem;
+}
+
+.currency {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+}
+
+/* Стили для страницы оплаты */
+.payment-info {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 2rem;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.payment-info h3 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--secondary-color);
+  padding-bottom: 0.5rem;
+}
+
+.yoomoney-info {
+  margin: 2rem 0;
+}
+
+.wallet-number {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  border-radius: 5px;
+  margin: 1rem 0;
+}
+
+.wallet-number span {
+  font-family: monospace;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* Платежная кнопка */
+.payment-btn {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background-color: #ff9800;
+  color: white !important;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  margin: 1rem 0;
+  font-size: 1.1rem;
+  transition: background-color 0.3s;
+}
+
+.payment-btn:hover {
+  background-color: #e68900;
+}
+
+.payment-methods {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin: 1.5rem 0;
+}
+
+.payment-method {
+  padding: 1.5rem;
+  border-radius: 8px;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.payment-method h4 {
+  margin-top: 0;
+  color: var(--primary-color);
+}
+
+#copy-wallet {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#copy-wallet:hover {
+  background-color: var(--secondary-color);
+}
+
+.payment-note {
+  padding: 1rem;
+  background-color: rgba(255, 255, 0, 0.1);
+  border-radius: 5px;
+  border-left: 3px solid var(--secondary-color);
+}
+
+.payment-instructions ol {
+  margin-left: 1.5rem;
+  line-height: 1.6;
+}
+
+.payment-instructions li {
+  margin-bottom: 0.5rem;
+}
+
+.action-buttons {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  background-color: var(--primary-color);
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.btn:hover {
+  background-color: var(--secondary-color);
+}
+
+/* Профиль */
+.profile-actions {
+  margin-top: 2rem;
+}
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 1rem;
+  margin-top: 3rem;
+  background-color: rgba(0, 0, 0, 0.1);
 }

@@ -49,18 +49,34 @@
             
             <div class="yoomoney-info">
                 <h3>Оплата через YooMoney</h3>
-                <p>Для совершения пожертвования, пожалуйста, переведите указанную сумму на кошелек YooMoney:</p>
-                <div class="wallet-number">
-                    <span>{{ wallet }}</span>
-                    <button id="copy-wallet" onclick="copyWallet()">Копировать</button>
+                <p>Для совершения пожертвования вы можете воспользоваться одним из способов:</p>
+                
+                <div class="payment-methods">
+                    <div class="payment-method">
+                        <h4>Способ 1: Платежная ссылка (рекомендуется)</h4>
+                        <p>Нажмите на кнопку ниже и вы будете перенаправлены на защищенную страницу оплаты YooMoney:</p>
+                        <a href="{{ payment_url }}" target="_blank" class="payment-btn">Перейти к оплате {{ amount }} ₽</a>
+                        <p class="payment-note">
+                            <strong>Примечание:</strong> Вся информация о платеже уже включена в ссылку, вам не нужно ничего дополнительно указывать
+                        </p>
+                    </div>
+                    
+                    <div class="payment-method">
+                        <h4>Способ 2: Ручной перевод</h4>
+                        <p>Если вы предпочитаете сделать перевод вручную, воспользуйтесь следующей информацией:</p>
+                        <div class="wallet-number">
+                            <span>{{ wallet }}</span>
+                            <button id="copy-wallet" onclick="copyWallet()">Копировать</button>
+                        </div>
+                        <p class="payment-note">
+                            <strong>Важно:</strong> При ручном переводе обязательно укажите в комментарии к платежу идентификатор: <strong>{{ payment_id }}</strong>
+                        </p>
+                    </div>
                 </div>
-                <p class="payment-note">
-                    <strong>Важно:</strong> После совершения платежа, пожалуйста, укажите в комментарии к платежу идентификатор: <strong>{{ payment_id }}</strong>
-                </p>
             </div>
             
             <div class="payment-instructions">
-                <h3>Инструкция по оплате</h3>
+                <h3>Инструкция по ручному переводу</h3>
                 <ol>
                     <li>Скопируйте номер кошелька YooMoney: <strong>{{ wallet }}</strong></li>
                     <li>Войдите в свой аккаунт YooMoney или используйте мобильное приложение</li>
