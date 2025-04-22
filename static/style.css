@@ -10,14 +10,14 @@
   --light-input-border: #cccccc;
   
   /* Dark Theme Variables */
-  --dark-bg: #1a1a1a;
+  --dark-bg: #121218;
   --dark-text: #f0f0f0;
-  --dark-header-bg: #2c2c2c;
+  --dark-header-bg: #1a1a23;
   --dark-accent: #5cba60;
-  --dark-card-bg: #333333;
-  --dark-card-border: #444444;
-  --dark-input-bg: #2c2c2c;
-  --dark-input-border: #555555;
+  --dark-card-bg: #1a1a23;
+  --dark-card-border: #2d2d3f;
+  --dark-input-bg: #222230;
+  --dark-input-border: #2d2d3f;
   
   /* Common Variables */
   --primary-color: #4caf50;
@@ -239,7 +239,7 @@ form button:hover {
 }
 
 .user-card {
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgba(0, 0, 0, 0.4);
   border-radius: 8px;
   padding: 20px;
   display: flex;
@@ -251,7 +251,7 @@ form button:hover {
 
 .user-card.banned {
   border-left-color: #f44336;
-  background-color: rgba(244, 67, 54, 0.05);
+  background-color: rgba(244, 67, 54, 0.15);
 }
 
 .user-info {
@@ -267,7 +267,7 @@ form button:hover {
 }
 
 .user-action-form {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: rgba(0, 0, 0, 0.5);
   padding: 15px;
   border-radius: 5px;
 }
@@ -509,7 +509,7 @@ input:checked + .slider:before {
 .payment-method {
   padding: 1.5rem;
   border-radius: 8px;
-  background-color: rgba(0, 0, 0, 0.25);
+  background-color: rgba(0, 0, 0, 0.6);
 }
 
 .payment-method h4 {
