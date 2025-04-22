@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>PandaDev — Главная</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>PandaDev</h1>
+    {% if user %}
+      <p>Привет, {{ user.username }}! <a href="/logout">Выйти</a></p>
+      {% if user.is_admin %}
+        <a href="/admin">Админ-панель</a>
+      {% endif %}
+    {% else %}
+      <a href="/login">Вход</a> | <a href="/register">Регистрация</a>
+    {% endif %}
+  </header>
+
+  <main>
+    <h2>Новости</h2>
+    {% for post in news %}
+      <article>
+        <h3>{{ post.title }}</h3>
+        <p>{{ post.content }}</p>
+      </article>
+    {% endfor %}
+  </main>
+</body>
+</html>
