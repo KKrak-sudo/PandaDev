@@ -55,208 +55,187 @@ def get_current_user():
         return User.query.get(user_id)
     return None
 
-def get_current_user(request: Request, db: Session) -> Optional[User]:
-    user_id = request.session.get("user_id")
-    if user_id:
-        return db.query(User).filter(User.id == user_id).first()
-    return None
-
 # Routes
-@app.get("/", response_class=HTMLResponse)
-async def homepage(request: Request, db: Session = Depends(get_db)):
-    news = db.query(News).order_by(News.id.desc()).all()
-    categories = db.query(Category).order_by(Category.name).all()
-    user = get_current_user(request, db)
-    return templates.TemplateResponse(
+@app.route("/")
+def homepage():
+    news = News.query.order_by(News.id.desc()).all()
+    categories = Category.query.order_by(Category.name).all()
+    user = get_current_user()
+    return render_template(
         "index.html", 
-        {"request": request, "news": news, "user": user, "categories": categories}
+        news=news, 
+        user=user, 
+        categories=categories
     )
 
-@app.get("/category/{category_id}", response_class=HTMLResponse)
-async def category_page(request: Request, category_id: int, db: Session = Depends(get_db)):
-    category = db.query(Category).filter_by(id=category_id).first()
-    if not category:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+@app.route("/category/<int:category_id>")
+def category_page(category_id):
+    category = Category.query.get_or_404(category_id)
+    news = News.query.filter_by(category_id=category_id).order_by(News.id.desc()).all()
+    categories = Category.query.order_by(Category.name).all()
+    user = get_current_user()
     
-    news = db.query(News).filter_by(category_id=category_id).order_by(News.id.desc()).all()
-    categories = db.query(Category).order_by(Category.name).all()
-    user = get_current_user(request, db)
-    
-    return templates.TemplateResponse(
+    return render_template(
         "category.html", 
-        {
-            "request": request, 
-            "news": news, 
-            "user": user, 
-            "category": category,
-            "categories": categories
-        }
+        news=news, 
+        user=user, 
+        category=category,
+        categories=categories
     )
 
-@app.get("/register", response_class=HTMLResponse)
-async def register_get(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
+@app.route("/register", methods=["GET"])
+def register_get():
+    user = get_current_user()
     if user:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
-    return templates.TemplateResponse(
-        "register.html", 
-        {"request": request, "error": None}
-    )
+        return redirect(url_for("homepage"))
+    return render_template("register.html", error=None)
 
-@app.post("/register")
-async def register_post(
-    request: Request, 
-    username: str = Form(...), 
-    password: str = Form(...),
-    email: str = Form(None),
-    db: Session = Depends(get_db)
-):
+@app.route("/register", methods=["POST"])
+def register_post():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    email = request.form.get("email")
+    
     # Check if username already exists
-    if db.query(User).filter_by(username=username).first():
-        return templates.TemplateResponse(
+    if User.query.filter_by(username=username).first():
+        return render_template(
             "register.html", 
-            {"request": request, "error": "Пользователь с таким именем уже существует"}
+            error="Пользователь с таким именем уже существует"
         )
     
     # Check if email already exists (if provided)
-    if email and db.query(User).filter_by(email=email).first():
-        return templates.TemplateResponse(
+    if email and User.query.filter_by(email=email).first():
+        return render_template(
             "register.html", 
-            {"request": request, "error": "Этот email уже зарегистрирован"}
+            error="Этот email уже зарегистрирован"
         )
     
     # Create new user
     user = User(username=username, password=hash_password(password), email=email)
-    db.add(user)
-    db.commit()
+    db.session.add(user)
+    db.session.commit()
     
     # Redirect to login page
-    return RedirectResponse("/login?registered=true", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(url_for("login_get", registered=True))
 
-@app.get("/login", response_class=HTMLResponse)
-async def login_get(request: Request, registered: bool = False, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
+@app.route("/login", methods=["GET"])
+def login_get():
+    user = get_current_user()
     if user:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
     
-    return templates.TemplateResponse(
-        "login.html", 
-        {"request": request, "registered": registered, "error": None}
-    )
+    registered = request.args.get("registered", "false") == "true"
+    return render_template("login.html", registered=registered, error=None)
 
-@app.post("/login")
-async def login_post(
-    request: Request, 
-    username: str = Form(...), 
-    password: str = Form(...), 
-    db: Session = Depends(get_db)
-):
-    user = db.query(User).filter_by(
+@app.route("/login", methods=["POST"])
+def login_post():
+    username = request.form.get("username")
+    password = request.form.get("password")
+    
+    user = User.query.filter_by(
         username=username, 
         password=hash_password(password)
     ).first()
     
     if user:
-        request.session["user_id"] = user.id
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        session["user_id"] = user.id
+        return redirect(url_for("homepage"))
     
-    return templates.TemplateResponse(
+    return render_template(
         "login.html", 
-        {"request": request, "registered": False, "error": "Неверное имя пользователя или пароль"}
+        registered=False, 
+        error="Неверное имя пользователя или пароль"
     )
 
-@app.get("/logout")
-async def logout(request: Request):
-    request.session.clear()
-    return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("homepage"))
 
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_panel(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
+@app.route("/admin")
+def admin_panel():
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
     
-    news = db.query(News).order_by(News.id.desc()).all()
-    categories = db.query(Category).order_by(Category.name).all()
-    return templates.TemplateResponse(
+    news = News.query.order_by(News.id.desc()).all()
+    categories = Category.query.order_by(Category.name).all()
+    return render_template(
         "admin.html", 
-        {"request": request, "news": news, "user": user, "categories": categories}
+        news=news, 
+        user=user, 
+        categories=categories
     )
 
-@app.get("/admin/categories", response_class=HTMLResponse)
-async def admin_categories(request: Request, db: Session = Depends(get_db)):
-    user = get_current_user(request, db)
+@app.route("/admin/categories")
+def admin_categories():
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
     
-    categories = db.query(Category).order_by(Category.name).all()
-    return templates.TemplateResponse(
+    categories = Category.query.order_by(Category.name).all()
+    return render_template(
         "admin_categories.html", 
-        {"request": request, "categories": categories, "user": user}
+        categories=categories, 
+        user=user,
+        error=None
     )
 
-@app.post("/admin/categories")
-async def add_category(
-    request: Request,
-    name: str = Form(...),
-    description: str = Form(None),
-    db: Session = Depends(get_db)
-):
-    user = get_current_user(request, db)
+@app.route("/admin/categories", methods=["POST"])
+def add_category():
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
+    
+    name = request.form.get("name")
+    description = request.form.get("description")
     
     # Проверка на существование категории
-    if db.query(Category).filter_by(name=name).first():
-        return templates.TemplateResponse(
+    if Category.query.filter_by(name=name).first():
+        categories = Category.query.order_by(Category.name).all()
+        return render_template(
             "admin_categories.html",
-            {
-                "request": request, 
-                "error": "Категория с таким именем уже существует",
-                "categories": db.query(Category).order_by(Category.name).all(),
-                "user": user
-            }
+            error="Категория с таким именем уже существует",
+            categories=categories,
+            user=user
         )
     
     new_category = Category(name=name, description=description)
-    db.add(new_category)
-    db.commit()
+    db.session.add(new_category)
+    db.session.commit()
     
-    return RedirectResponse("/admin/categories", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(url_for("admin_categories"))
 
-@app.post("/admin/categories/{category_id}/delete")
-async def delete_category(
-    request: Request,
-    category_id: int,
-    db: Session = Depends(get_db)
-):
-    user = get_current_user(request, db)
+@app.route("/admin/categories/<int:category_id>/delete", methods=["POST"])
+def delete_category(category_id):
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
     
-    category = db.query(Category).filter_by(id=category_id).first()
+    category = Category.query.get(category_id)
     if category:
         # Удаляем связь с новостями
-        news_items = db.query(News).filter_by(category_id=category_id).all()
+        news_items = News.query.filter_by(category_id=category_id).all()
         for item in news_items:
             item.category_id = None
         
-        db.delete(category)
-        db.commit()
+        db.session.delete(category)
+        db.session.commit()
     
-    return RedirectResponse("/admin/categories", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(url_for("admin_categories"))
 
-@app.post("/admin/news")
-async def add_news(
-    request: Request, 
-    title: str = Form(...), 
-    content: str = Form(...),
-    category_id: int = Form(None),
-    db: Session = Depends(get_db)
-):
-    user = get_current_user(request, db)
+@app.route("/admin/news", methods=["POST"])
+def add_news():
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
+    
+    title = request.form.get("title")
+    content = request.form.get("content")
+    category_id = request.form.get("category_id")
+    
+    if category_id == "":
+        category_id = None
     
     new_post = News(
         title=title, 
@@ -264,28 +243,41 @@ async def add_news(
         author_id=user.id,
         category_id=category_id
     )
-    db.add(new_post)
-    db.commit()
+    db.session.add(new_post)
+    db.session.commit()
     
-    return RedirectResponse("/admin", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(url_for("admin_panel"))
 
-@app.post("/admin/news/{news_id}/delete")
-async def delete_news(
-    request: Request, 
-    news_id: int, 
-    db: Session = Depends(get_db)
-):
-    user = get_current_user(request, db)
+@app.route("/admin/news/<int:news_id>/delete", methods=["POST"])
+def delete_news(news_id):
+    user = get_current_user()
     if not user or not user.is_admin:
-        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
+        return redirect(url_for("homepage"))
     
-    news = db.query(News).filter_by(id=news_id).first()
+    news = News.query.get(news_id)
     if news:
-        db.delete(news)
-        db.commit()
+        db.session.delete(news)
+        db.session.commit()
     
-    return RedirectResponse("/admin", status_code=status.HTTP_303_SEE_OTHER)
+    return redirect(url_for("admin_panel"))
+
+# Create admin user function
+def create_admin():
+    admin = User.query.filter_by(username="root").first()
+    if not admin:
+        admin = User(
+            username="root",
+            password=hash_password("2344gr"),
+            is_admin=True
+        )
+        db.session.add(admin)
+        db.session.commit()
+        print("Администратор 'root' успешно создан.")
+
+# Create admin when app starts
+with app.app_context():
+    create_admin()
 
 # Run the application
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=5000, reload=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
