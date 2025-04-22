@@ -1,80 +1,96 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PandaDev — Главная</title>
-  <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Новостной портал</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <header>
-    <h1><i class="fas fa-paw"></i> PandaDev</h1>
-    <div>
-      {% if user %}
-        <p>Привет, <strong>{{ user.username }}</strong>! <a href="/logout"><i class="fas fa-sign-out-alt"></i> Выйти</a></p>
-        {% if user.is_admin %}
-          <a href="/admin" class="admin-link"><i class="fas fa-lock"></i> Админ-панель</a>
-        {% endif %}
-      {% else %}
-        <a href="/login"><i class="fas fa-sign-in-alt"></i> Вход</a> | <a href="/register"><i class="fas fa-user-plus"></i> Регистрация</a>
-      {% endif %}
-    </div>
-  </header>
-
-  <main>
-    <div class="row">
-      <div class="col-md-8">
-        <h2><i class="fas fa-newspaper"></i> Новости</h2>
-        {% if news %}
-          {% for post in news %}
-            <article>
-              <h3>{{ post.title }}</h3>
-              <div class="news-meta">
-                <i class="far fa-calendar-alt"></i> {{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else 'Дата не указана' }}
-                {% if post.category %}
-                  | <i class="fas fa-folder"></i> <a href="/category/{{ post.category_id }}">{{ post.category.name }}</a>
-                {% endif %}
-              </div>
-              <p>{{ post.content }}</p>
-            </article>
-          {% endfor %}
-        {% else %}
-          <div class="empty-state">
-            <i class="fas fa-newspaper fa-3x" style="color: #ddd; margin-bottom: 15px;"></i>
-            <p>Пока нет опубликованных новостей.</p>
-            {% if user and user.is_admin %}
-              <p><a href="/admin">Добавить первую новость</a></p>
-            {% endif %}
-          </div>
-        {% endif %}
-      </div>
-      
-      <div class="col-md-4">
-        <div style="background: white; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-          <h4><i class="fas fa-folder-open"></i> Категории</h4>
-          <ul style="list-style: none; padding-left: 0;">
-            {% for category in categories %}
-              <li style="margin-bottom: 8px;">
-                <a href="/category/{{ category.id }}">
-                  <i class="fas fa-folder"></i> {{ category.name }}
-                </a>
-              </li>
-            {% else %}
-              <li>Нет доступных категорий</li>
-            {% endfor %}
-          </ul>
+<body class="{{ session.get('theme', 'dark-theme') }}">
+    <header>
+        <div>
+            <h1>Новостной портал</h1>
+            <nav>
+                <a href="{{ url_for('homepage') }}">Главная</a>
+                {% for category in categories %}
+                <a href="{{ url_for('category_page', category_id=category.id) }}">{{ category.name }}</a>
+                {% endfor %}
+            </nav>
         </div>
-      </div>
-    </div>
-  </main>
+        <div>
+            {% if user %}
+            <span>{{ user.username }}</span>
+            {% if user.is_admin %}
+            <a href="{{ url_for('admin_panel') }}">Панель администратора</a>
+            {% endif %}
+            <a href="{{ url_for('profile') }}">Личный кабинет</a>
+            <a href="{{ url_for('logout') }}">Выход</a>
+            {% else %}
+            <a href="{{ url_for('login_get') }}">Вход</a>
+            <a href="{{ url_for('register_get') }}">Регистрация</a>
+            {% endif %}
+            <label class="theme-switch">
+                <span class="theme-switch-label">Тема:</span>
+                <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
 
-  <footer style="text-align: center; margin-top: 40px; color: #777; font-size: 14px;">
-    <p>© 2025 PandaDev. Все права защищены.</p>
-  </footer>
+    <main>
+        <h2>Последние новости</h2>
+        
+        {% if news %}
+            {% for item in news %}
+            <article>
+                <h3>{{ item.title }}</h3>
+                <div class="news-meta">
+                    <span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                    {% if item.category %}
+                    <span> | {{ item.category.name }}</span>
+                    {% endif %}
+                </div>
+                <div class="news-content">
+                    {{ item.content }}
+                </div>
+            </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>Новостей пока нет.</p>
+            </div>
+        {% endif %}
+    </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <footer>
+        <p>Все права защищены &copy; PandaDev</p>
+    </footer>
+
+    <script>
+        // Обработчик для переключения темы
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                document.cookie = "theme=light-theme; path=/; max-age=31536000";
+            } else {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                document.cookie = "theme=dark-theme; path=/; max-age=31536000";
+            }
+            
+            // Отправляем запрос на обновление темы
+            fetch('/update_theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    theme: this.checked ? 'light-theme' : 'dark-theme'
+                })
+            });
+        });
+    </script>
 </body>
 </html>

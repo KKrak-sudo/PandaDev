@@ -20,26 +20,21 @@
         </div>
         <div>
             {% if user %}
-                <span>{{ user.username }}</span>
-                <a href="{{ url_for('profile') }}">Личный кабинет</a>
-                {% if user.is_admin %}
-                <a href="{{ url_for('admin_panel') }}" class="admin-link">Админ-панель</a>
-                {% endif %}
-                <a href="{{ url_for('logout') }}">Выход</a>
-                <label class="theme-switch">
-                    <span class="theme-switch-label">Тема:</span>
-                    <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
-                    <span class="slider"></span>
-                </label>
-            {% else %}
-                <a href="{{ url_for('login_get') }}">Вход</a>
-                <a href="{{ url_for('register_get') }}">Регистрация</a>
-                <label class="theme-switch">
-                    <span class="theme-switch-label">Тема:</span>
-                    <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
-                    <span class="slider"></span>
-                </label>
+            <span>{{ user.username }}</span>
+            {% if user.is_admin %}
+            <a href="{{ url_for('admin_panel') }}">Панель администратора</a>
             {% endif %}
+            <a href="{{ url_for('profile') }}">Личный кабинет</a>
+            <a href="{{ url_for('logout') }}">Выход</a>
+            {% else %}
+            <a href="{{ url_for('login_get') }}">Вход</a>
+            <a href="{{ url_for('register_get') }}">Регистрация</a>
+            {% endif %}
+            <label class="theme-switch">
+                <span class="theme-switch-label">Тема:</span>
+                <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
         </div>
     </header>
 
