@@ -214,6 +214,23 @@ def admin_panel():
         user=user, 
         categories=categories
     )
+    
+@app.route("/admin/users")
+def admin_users():
+    user = get_current_user()
+    if not user or not user.is_admin:
+        return redirect(url_for("homepage"))
+    
+    users = User.query.order_by(User.username).all()
+    categories = Category.query.all()
+    return render_template(
+        "admin_users.html", 
+        users=users, 
+        user=user, 
+        categories=categories,
+        success=None,
+        error=None
+    )
 
 @app.route("/admin/categories")
 def admin_categories():
@@ -321,6 +338,97 @@ def create_admin():
         db.session.add(admin)
         db.session.commit()
         print("Администратор 'root' успешно создан.")
+
+# Изменение пароля пользователя администратором
+@app.route("/admin/users/<int:user_id>/change_password", methods=["POST"])
+def admin_change_password(user_id):
+    admin = get_current_user()
+    if not admin or not admin.is_admin:
+        return redirect(url_for("homepage"))
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return redirect(url_for("admin_users"))
+    
+    # Проверяем, что мы не меняем пароль другому админу (если сами не являемся этим админом)
+    if target_user.is_admin and admin.id != target_user.id:
+        return render_template(
+            "admin_users.html",
+            users=User.query.order_by(User.username).all(),
+            user=admin,
+            categories=Category.query.all(),
+            error="Невозможно изменить пароль другому администратору",
+            success=None
+        )
+    
+    new_password = request.form.get("new_password")
+    if not new_password:
+        return render_template(
+            "admin_users.html",
+            users=User.query.order_by(User.username).all(),
+            user=admin,
+            categories=Category.query.all(),
+            error="Необходимо указать новый пароль",
+            success=None
+        )
+    
+    # Обновляем пароль
+    target_user.password = hash_password(new_password)
+    db.session.commit()
+    
+    return render_template(
+        "admin_users.html",
+        users=User.query.order_by(User.username).all(),
+        user=admin,
+        categories=Category.query.all(),
+        error=None,
+        success=f"Пароль пользователя {target_user.username} успешно изменен"
+    )
+
+# Бан и разбан пользователя
+@app.route("/admin/users/<int:user_id>/toggle_ban", methods=["POST"])
+def toggle_user_ban(user_id):
+    admin = get_current_user()
+    if not admin or not admin.is_admin:
+        return redirect(url_for("homepage"))
+    
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return redirect(url_for("admin_users"))
+    
+    # Не даем забанить админа
+    if target_user.is_admin:
+        return render_template(
+            "admin_users.html",
+            users=User.query.order_by(User.username).all(),
+            user=admin,
+            categories=Category.query.all(),
+            error="Невозможно заблокировать администратора",
+            success=None
+        )
+    
+    # Меняем статус бана на противоположный
+    target_user.is_banned = not target_user.is_banned
+    
+    # Если баним, устанавливаем причину
+    if target_user.is_banned:
+        ban_reason = request.form.get("ban_reason", "")
+        target_user.ban_reason = ban_reason
+    else:
+        # Если разбаниваем, очищаем причину
+        target_user.ban_reason = None
+    
+    db.session.commit()
+    
+    action = "заблокирован" if target_user.is_banned else "разблокирован"
+    return render_template(
+        "admin_users.html",
+        users=User.query.order_by(User.username).all(),
+        user=admin,
+        categories=Category.query.all(),
+        error=None,
+        success=f"Пользователь {target_user.username} успешно {action}"
+    )
 
 # Личный кабинет
 @app.route("/profile")

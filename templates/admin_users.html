@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Управление пользователями - Новостной портал</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="{{ session.get('theme', 'dark-theme') }}">
+    <header>
+        <div>
+            <h1>Новостной портал</h1>
+            <nav>
+                <a href="{{ url_for('homepage') }}">Главная</a>
+                {% for category in categories %}
+                <a href="{{ url_for('category_page', category_id=category.id) }}">{{ category.name }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+        <div>
+            <span>{{ user.username }}</span>
+            <a href="{{ url_for('admin_panel') }}">Панель администратора</a>
+            <a href="{{ url_for('profile') }}">Личный кабинет</a>
+            <a href="{{ url_for('logout') }}">Выход</a>
+            <label class="theme-switch">
+                <span class="theme-switch-label">Тема:</span>
+                <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
+
+    <main>
+        <h2>Управление пользователями</h2>
+        
+        <div class="admin-menu">
+            <a href="{{ url_for('admin_panel') }}">Управление новостями</a>
+            <a href="{{ url_for('admin_categories') }}">Управление категориями</a>
+            <a href="{{ url_for('admin_users') }}" class="active">Управление пользователями</a>
+        </div>
+        
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="success-message">{{ success }}</div>
+        {% endif %}
+        
+        <section>
+            <h3>Список пользователей</h3>
+            <div class="user-list">
+                {% for u in users %}
+                <div class="user-card {% if u.is_banned %}banned{% endif %}">
+                    <div class="user-info">
+                        <h4>{{ u.username }} {% if u.is_admin %}<span class="admin-badge">Администратор</span>{% endif %}</h4>
+                        <p><strong>Email:</strong> {{ u.email if u.email else 'Не указан' }}</p>
+                        <p><strong>Дата регистрации:</strong> {{ u.created_at.strftime('%d.%m.%Y') }}</p>
+                        {% if u.is_banned %}
+                        <p class="ban-info"><strong>Статус:</strong> <span class="ban-status">Заблокирован</span></p>
+                        {% if u.ban_reason %}
+                        <p class="ban-info"><strong>Причина блокировки:</strong> {{ u.ban_reason }}</p>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                    <div class="user-actions">
+                        {% if not u.is_admin or user.id == u.id %}
+                        <!-- Форма смены пароля -->
+                        <div class="user-action-form">
+                            <form action="{{ url_for('admin_change_password', user_id=u.id) }}" method="post">
+                                <div class="form-group">
+                                    <input type="password" name="new_password" placeholder="Новый пароль" required>
+                                </div>
+                                <button type="submit" class="btn btn-warning">Сменить пароль</button>
+                            </form>
+                        </div>
+                        
+                        {% if u.id != user.id %}
+                        <!-- Форма бана/разбана -->
+                        <div class="user-action-form">
+                            <form action="{{ url_for('toggle_user_ban', user_id=u.id) }}" method="post">
+                                {% if not u.is_banned %}
+                                <div class="form-group">
+                                    <input type="text" name="ban_reason" placeholder="Причина блокировки">
+                                </div>
+                                <button type="submit" class="btn btn-danger">Заблокировать</button>
+                                {% else %}
+                                <button type="submit" class="btn btn-success">Разблокировать</button>
+                                {% endif %}
+                            </form>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>Все права защищены &copy; PandaDev</p>
+    </footer>
+
+    <script>
+        // Обработчик для переключения темы
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                document.cookie = "theme=light-theme; path=/; max-age=31536000";
+            } else {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                document.cookie = "theme=dark-theme; path=/; max-age=31536000";
+            }
+            
+            // Отправляем запрос на обновление темы
+            fetch('/update_theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    theme: this.checked ? 'light-theme' : 'dark-theme'
+                })
+            });
+        });
+    </script>
+</body>
+</html>

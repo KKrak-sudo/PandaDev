@@ -1,67 +1,127 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Админ-панель — PandaDev</title>
-  <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap">
-  <link rel="stylesheet" href="/static/style.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель администратора - Новостной портал</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 </head>
-<body>
-  <header>
-    <h1><i class="fas fa-paw"></i> PandaDev</h1>
-    <a href="/"><i class="fas fa-home"></i> На главную</a>
-  </header>
-
-  <main>
-    <h2><i class="fas fa-lock"></i> Админ-панель</h2>
-    
-    <div style="background: white; padding: 20px; border-radius: 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); margin-bottom: 30px;">
-      <h3><i class="fas fa-plus-circle"></i> Добавить новость</h3>
-      <form method="post" action="/admin/news">
+<body class="{{ session.get('theme', 'dark-theme') }}">
+    <header>
         <div>
-          <label for="title"><i class="fas fa-heading"></i> Заголовок</label>
-          <input type="text" id="title" name="title" placeholder="Введите заголовок новости" required>
+            <h1>Новостной портал</h1>
+            <nav>
+                <a href="{{ url_for('homepage') }}">Главная</a>
+                {% for category in categories %}
+                <a href="{{ url_for('category_page', category_id=category.id) }}">{{ category.name }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+        <div>
+            <span>{{ user.username }}</span>
+            <a href="{{ url_for('admin_panel') }}">Панель администратора</a>
+            <a href="{{ url_for('profile') }}">Личный кабинет</a>
+            <a href="{{ url_for('logout') }}">Выход</a>
+            <label class="theme-switch">
+                <span class="theme-switch-label">Тема:</span>
+                <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                <span class="slider"></span>
+            </label>
+        </div>
+    </header>
+
+    <main>
+        <h2>Панель администратора</h2>
+        
+        <div class="admin-menu">
+            <a href="{{ url_for('admin_panel') }}" class="active">Управление новостями</a>
+            <a href="{{ url_for('admin_categories') }}">Управление категориями</a>
+            <a href="{{ url_for('admin_users') }}">Управление пользователями</a>
         </div>
         
-        <div>
-          <label for="content"><i class="fas fa-align-left"></i> Содержание</label>
-          <textarea id="content" name="content" placeholder="Введите текст новости" rows="5" required></textarea>
-        </div>
-        
-        <button type="submit"><i class="fas fa-save"></i> Опубликовать</button>
-      </form>
-    </div>
-
-    <h3><i class="fas fa-list"></i> Управление новостями</h3>
-    
-    {% if news %}
-      {% for post in news %}
-        <article>
-          <h3>{{ post.title }}</h3>
-          <div class="news-meta">
-            <i class="far fa-calendar-alt"></i> {{ post.created_at.strftime('%d.%m.%Y %H:%M') if post.created_at else 'Дата не указана' }}
-          </div>
-          <p>{{ post.content }}</p>
-          
-          <div class="admin-actions">
-            <form method="post" action="/admin/news/{{ post.id }}/delete" onsubmit="return confirm('Вы уверены, что хотите удалить эту новость?');">
-              <button type="submit" class="delete-btn"><i class="fas fa-trash"></i> Удалить</button>
+        <section>
+            <h3>Добавить новость</h3>
+            <form action="{{ url_for('add_news') }}" method="post">
+                <div>
+                    <label for="title">Заголовок:</label>
+                    <input type="text" id="title" name="title" required>
+                </div>
+                <div>
+                    <label for="category_id">Категория:</label>
+                    <select id="category_id" name="category_id">
+                        <option value="">Без категории</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="content">Содержание:</label>
+                    <textarea id="content" name="content" rows="8" required></textarea>
+                </div>
+                <button type="submit">Добавить новость</button>
             </form>
-          </div>
-        </article>
-      {% endfor %}
-    {% else %}
-      <div class="empty-state">
-        <i class="fas fa-newspaper fa-3x" style="color: #ddd; margin-bottom: 15px;"></i>
-        <p>Пока нет опубликованных новостей.</p>
-        <p>Добавьте первую новость с помощью формы выше.</p>
-      </div>
-    {% endif %}
-  </main>
+        </section>
+        
+        <section>
+            <h3>Управление новостями</h3>
+            {% if news %}
+                {% for item in news %}
+                <article>
+                    <h4>{{ item.title }}</h4>
+                    <div class="news-meta">
+                        <span>{{ item.created_at.strftime('%d.%m.%Y %H:%M') }}</span>
+                        {% if item.category %}
+                        <span> | {{ item.category.name }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="news-content">
+                        {{ item.content }}
+                    </div>
+                    <div class="admin-actions">
+                        <form action="{{ url_for('delete_news', news_id=item.id) }}" method="post" onsubmit="return confirm('Вы уверены, что хотите удалить эту новость?');">
+                            <button type="submit" class="delete-btn">Удалить</button>
+                        </form>
+                    </div>
+                </article>
+                {% endfor %}
+            {% else %}
+                <div class="empty-state">
+                    <p>Новостей пока нет.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <footer>
+        <p>Все права защищены &copy; PandaDev</p>
+    </footer>
+
+    <script>
+        // Обработчик для переключения темы
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                document.cookie = "theme=light-theme; path=/; max-age=31536000";
+            } else {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                document.cookie = "theme=dark-theme; path=/; max-age=31536000";
+            }
+            
+            // Отправляем запрос на обновление темы
+            fetch('/update_theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    theme: this.checked ? 'light-theme' : 'dark-theme'
+                })
+            });
+        });
+    </script>
 </body>
 </html>
