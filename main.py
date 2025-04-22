@@ -138,6 +138,7 @@ def login_post():
     ).first()
     
     if user:
+        
         session["user_id"] = user.id
         return redirect(url_for("homepage"))
     
