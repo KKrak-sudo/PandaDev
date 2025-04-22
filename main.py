@@ -1,8 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 import hashlib
 import os
-from datetime import datetime
+import random
+import string
+import secrets
+from datetime import datetime, timedelta
 
 # Create Flask app
 app = Flask(__name__)
@@ -23,6 +26,8 @@ class User(db.Model):
     is_admin = db.Column(db.Boolean, default=False)
     is_banned = db.Column(db.Boolean, default=False)
     ban_reason = db.Column(db.String(200), nullable=True)
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     news = db.relationship("News", backref="author", lazy=True)
 

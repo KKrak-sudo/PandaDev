@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Личный кабинет - Новостной портал</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="{{ session.get('theme', 'dark-theme') }}">
+    <header>
+        <div>
+            <h1>Новостной портал</h1>
+            <nav>
+                <a href="{{ url_for('homepage') }}">Главная</a>
+                {% for category in categories %}
+                <a href="{{ url_for('category_page', category_id=category.id) }}">{{ category.name }}</a>
+                {% endfor %}
+            </nav>
+        </div>
+        <div>
+            {% if user %}
+                <span>{{ user.username }}</span>
+                <a href="{{ url_for('profile') }}">Личный кабинет</a>
+                {% if user.is_admin %}
+                <a href="{{ url_for('admin_panel') }}" class="admin-link">Админ-панель</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}">Выход</a>
+                <label class="theme-switch">
+                    <span class="theme-switch-label">Тема:</span>
+                    <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                    <span class="slider"></span>
+                </label>
+            {% else %}
+                <a href="{{ url_for('login_get') }}">Вход</a>
+                <a href="{{ url_for('register_get') }}">Регистрация</a>
+                <label class="theme-switch">
+                    <span class="theme-switch-label">Тема:</span>
+                    <input type="checkbox" id="theme-toggle" {% if session.get('theme') == 'light-theme' %}checked{% endif %}>
+                    <span class="slider"></span>
+                </label>
+            {% endif %}
+        </div>
+    </header>
+
+    <main>
+        <h2>Личный кабинет</h2>
+        
+        {% if error %}
+        <div class="error-message">{{ error }}</div>
+        {% endif %}
+        
+        {% if success %}
+        <div class="success-message">{{ success }}</div>
+        {% endif %}
+        
+        <section>
+            <h3>Информация о профиле</h3>
+            <div class="profile-info">
+                <p><strong>Имя пользователя:</strong> {{ user.username }}</p>
+                <p><strong>Email:</strong> {{ user.email if user.email else 'Не указан' }}</p>
+                <p><strong>Дата регистрации:</strong> {{ user.created_at.strftime('%d.%m.%Y') }}</p>
+            </div>
+        </section>
+        
+        <section class="profile-actions">
+            <h3>Действия</h3>
+            <div class="action-buttons">
+                <a href="{{ url_for('donate') }}" class="btn btn-primary">Поддержать проект</a>
+            </div>
+        </section>
+
+        <section>
+            <h3>Изменить email</h3>
+            <form action="{{ url_for('update_email') }}" method="post">
+                <div>
+                    <label for="email">Новый email:</label>
+                    <input type="email" id="email" name="email" value="{{ user.email or '' }}" required>
+                </div>
+                <div>
+                    <label for="password">Пароль для подтверждения:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Сохранить</button>
+            </form>
+        </section>
+
+        <section>
+            <h3>Изменить пароль</h3>
+            <form action="{{ url_for('update_password') }}" method="post">
+                <div>
+                    <label for="current_password">Текущий пароль:</label>
+                    <input type="password" id="current_password" name="current_password" required>
+                </div>
+                <div>
+                    <label for="new_password">Новый пароль:</label>
+                    <input type="password" id="new_password" name="new_password" required>
+                </div>
+                <div>
+                    <label for="confirm_password">Подтвердите новый пароль:</label>
+                    <input type="password" id="confirm_password" name="confirm_password" required>
+                </div>
+                <button type="submit">Изменить пароль</button>
+            </form>
+        </section>
+    </main>
+
+    <footer>
+        <p>Все права защищены &copy; PandaDev</p>
+    </footer>
+
+    <script>
+        // Обработчик для переключения темы
+        document.getElementById('theme-toggle').addEventListener('change', function() {
+            if (this.checked) {
+                document.body.classList.remove('dark-theme');
+                document.body.classList.add('light-theme');
+                document.cookie = "theme=light-theme; path=/; max-age=31536000";
+            } else {
+                document.body.classList.remove('light-theme');
+                document.body.classList.add('dark-theme');
+                document.cookie = "theme=dark-theme; path=/; max-age=31536000";
+            }
+            
+            // Отправляем запрос на обновление темы
+            fetch('/update_theme', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    theme: this.checked ? 'light-theme' : 'dark-theme'
+                })
+            });
+        });
+    </script>
+</body>
+</html>
